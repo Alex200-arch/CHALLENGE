@@ -3,6 +3,9 @@
 
 class message_server {
 public:
+    virtual bool start() = 0;
+    virtual void stop() = 0;
+
 protected:
 private:
 };

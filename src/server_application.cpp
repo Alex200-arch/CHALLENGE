@@ -17,13 +17,16 @@ void server_application::run() {
         return;
     }
 
-    // socket, create listen
-
     auto sigs = setup_signal_handlers();
 
     logger->info("application running ...");
 
-    keep_processing_signals(&sigs);
+    if (m_server->start()) {
+
+        keep_processing_signals(&sigs);
+
+        m_server->stop();
+    }
 
     pid_file_close();
 

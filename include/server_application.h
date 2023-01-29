@@ -19,10 +19,6 @@ private:
     sigset_t setup_signal_handlers() const;
     void keep_processing_signals(sigset_t *);
 
-    // bool onInit(const std::string& config) override;
-    // void onStart() override;
-    // void onStop() override;
-
     std::atomic_bool m_keep_going{true};
     std::string m_pid_file_name;
     std::string m_log_file_name;
