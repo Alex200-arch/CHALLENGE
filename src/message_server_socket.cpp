@@ -89,11 +89,10 @@ void message_server_socket::running() {
             else {
                 if (events[i].events & EPOLLIN) {
                     int msg_fd = events[i].data.fd;
-                    int len = ::read(msg_fd, buff, BUFF_SIZE - 1);
+                    int len = ::read(msg_fd, buff, BUFF_SIZE);
                     if (len > 0) {
-                        buff[len] = 0;
                         if (auto ptr_handler = get_handler(msg_fd); ptr_handler) {
-                            ptr_handler->add_message(buff);
+                            ptr_handler->add_message(buff, len);
                         }
                     }
                     else if (len == 0) {
