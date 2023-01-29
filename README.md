@@ -6,11 +6,11 @@
 ```console
 $ git clone https://github.com/gabime/spdlog.git
 $ cd spdlog && mkdir build && cd build
-$ cmake .. && make -j
+$ cmake3 .. && make -j
 ```
 
 ## Build Message Lite
 ```console
 $ mkdir build && cd build
-$ cmake .. && make
+$ cmake3 .. && make
 ```

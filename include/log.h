@@ -1,7 +1,7 @@
 #ifndef LOG_H_
 #define LOG_H_
 
-#include <spdlog/spdlog.h>
+#include "spdlog/spdlog.h"
 
 extern std::shared_ptr<spdlog::logger> logger;
 
