@@ -1,10 +1,7 @@
-#include "log.h"
+#include "client_application.h"
 
 int main(int argc, char *argv[]) {
-    init_logger("mc-lite-logger", "mc-lite.log");
-
-    logger->info("hello");
-    logger->error("hello");
-
+    client_application app("alice");
+    app.run();
     return EXIT_SUCCESS;
 }
