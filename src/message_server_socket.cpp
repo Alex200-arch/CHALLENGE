@@ -49,8 +49,11 @@ void message_server_socket::running() {
     usleep(500000);
 
     const size_t EVENTS_SIZE = 20;
+    const size_t BUFF_SIZE = 1024;
 
     epoll_event events[EVENTS_SIZE];
+
+    char buff[BUFF_SIZE];
 
     while (m_keep_going) {
         int num = epoll_wait(m_epoll_fd, events, EVENTS_SIZE, 500);
@@ -70,7 +73,7 @@ void message_server_socket::running() {
                     if (new_fd > 0) {
                         logger->info("new connection, fd {}", new_fd);
                         epoll_event epev{};
-                        epev.events = EPOLLIN | EPOLLET;
+                        epev.events = EPOLLIN;
                         epev.data.fd = new_fd;
                         int flags = fcntl(new_fd, F_GETFL, 0);
                         if (fcntl(new_fd, F_SETFL, flags | O_NONBLOCK) < 0) {
@@ -83,6 +86,19 @@ void message_server_socket::running() {
                 }
             }
             else {
+                if (events[i].events & EPOLLIN) {
+                    int msg_fd = events[i].data.fd;
+                    int len = ::read(msg_fd, buff, BUFF_SIZE - 1);
+                    if (len > 0) {
+                        buff[len] = 0;
+                        logger->info("msg, fd {}, len {}, msg {}", msg_fd, len, buff);
+                    }
+                    else if (len == 0) {
+                        logger->info("disconnection, fd {}", msg_fd);
+                        epoll_ctl(m_epoll_fd, EPOLL_CTL_DEL, msg_fd, nullptr);
+                        ::close(msg_fd);
+                    }
+                }
             }
         }
     }
