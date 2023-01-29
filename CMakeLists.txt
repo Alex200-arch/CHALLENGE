@@ -3,7 +3,7 @@ project(msg-lite CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(COMMON_SOURCES src/log.cpp)
+set(COMMON_SOURCES src/log.cpp src/message_handler.cpp)
 
 set(COMMON_LIBS
     libspdlog.a)

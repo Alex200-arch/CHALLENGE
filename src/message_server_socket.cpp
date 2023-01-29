@@ -81,6 +81,7 @@ void message_server_socket::running() {
                             continue;
                         }
                         epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, new_fd, &epev);
+                        add_handler(new_fd);
                         logger->info("new connection added, fd {}", new_fd);
                     }
                 }
@@ -91,11 +92,14 @@ void message_server_socket::running() {
                     int len = ::read(msg_fd, buff, BUFF_SIZE - 1);
                     if (len > 0) {
                         buff[len] = 0;
-                        logger->info("msg, fd {}, len {}, msg {}", msg_fd, len, buff);
+                        if (auto ptr_handler = get_handler(msg_fd); ptr_handler) {
+                            ptr_handler->add_message(buff);
+                        }
                     }
                     else if (len == 0) {
                         logger->info("disconnection, fd {}", msg_fd);
                         epoll_ctl(m_epoll_fd, EPOLL_CTL_DEL, msg_fd, nullptr);
+                        del_handler(msg_fd);
                         ::close(msg_fd);
                     }
                 }
