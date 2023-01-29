@@ -5,6 +5,6 @@
 
 extern std::shared_ptr<spdlog::logger> logger;
 
-void initLogger(const std::string &, const std::string &);
+void init_logger(const std::string &, const std::string &);
 
 #endif // LOG_H_

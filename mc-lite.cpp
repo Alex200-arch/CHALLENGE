@@ -1,7 +1,7 @@
 #include "log.h"
 
 int main(int argc, char *argv[]) {
-    initLogger("mc-lite-logger", "mc-lite.log");
+    init_logger("mc-lite-logger", "mc-lite.log");
 
     logger->info("hello");
     logger->error("hello");
