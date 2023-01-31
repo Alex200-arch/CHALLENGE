@@ -24,7 +24,8 @@ public:
 
 private:
     input_t process_input(const std::string &);
-    void output_msg(const std::string &);
+    void output_msg_echo(const std::string &);
+    void output_msg_recv(const std::string &);
     void output_error(const std::string &);
     std::string m_user_name;
     std::string m_prompt;

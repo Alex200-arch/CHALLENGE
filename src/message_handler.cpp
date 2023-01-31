@@ -4,9 +4,9 @@
 message_handler::message_handler() {
 }
 
-void message_handler::receive_message(char *buff, const int &len) {
+std::vector<message> message_handler::receive_message(char *buff, const int &len) {
     parse_network_message(buff, len);
-    process_message();
+    return process_message();
 }
 
 std::string message_handler::send_message(const std::string &from, const std::string &buff, char *out_buff, int &out_len) {
@@ -68,12 +68,14 @@ void message_handler::parse_network_message(char *buff, const int &len) {
     }
 }
 
-void message_handler::process_message() {
+std::vector<message> message_handler::process_message() {
+    std::vector<message> ret;
     while (!m_messages.empty()) {
         auto &msg = m_messages.front();
-        logger->info("type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
+        ret.push_back(msg);
         m_messages.pop_front();
     }
+    return ret;
 }
 
 void message_handler::make_network_message(const message &msg, char *buff, int32_t &len) {
@@ -100,7 +102,7 @@ message message_handler::parse_input_message(const std::string &from, const std:
     msg.type = messge_type_t::MSG;
     msg.from = from;
     msg.to = buff.substr(0, pos);
-    msg.payload = buff.substr(pos + 1);
+    msg.payload = (pos != std::string::npos) ? buff.substr(pos + 1) : "";
     msg.timestamp = time(NULL);
 
     return msg;

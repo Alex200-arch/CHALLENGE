@@ -3,6 +3,7 @@
 
 #include <list>
 #include <string>
+#include <vector>
 
 enum class messge_type_t : int16_t {
     CMD = 1,
@@ -17,7 +18,7 @@ struct message {
     std::string payload;
     long timestamp;
 
-    std::string to_string() {
+    std::string to_string() const {
         // timestamp (broadcast from) from: payload
         // 2021/06/04 15:35:40 tom: hi xx
         // 2021/06/04 15:35:40 broadcast from tom: hi xx
@@ -38,14 +39,14 @@ struct message {
 class message_handler {
 public:
     message_handler();
-    void receive_message(char *, const int &);
+    std::vector<message> receive_message(char *, const int &);
     std::string send_message(const std::string &, const std::string &, char *, int &);
+    void make_network_message(const message &, char *, int32_t &);
 
 protected:
 private:
     void parse_network_message(char *, const int &);
-    void process_message();
-    void make_network_message(const message &, char *, int32_t &);
+    std::vector<message> process_message();
     message parse_input_message(const std::string &, const std::string &);
     char m_buff[2048];
     int m_buff_w_pos{0};

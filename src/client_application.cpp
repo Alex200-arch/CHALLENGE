@@ -46,7 +46,7 @@ void client_application::run() {
                 if (!client.working()) {
                     if (client.start(input.payload)) {
                         m_prompt = input.payload + "|" + m_user_name + "> ";
-                        output_msg("welcome!!!");
+                        output_msg_recv("welcome " + m_user_name + "!!!");
                     }
                     else {
                         output_error("connection failed");
@@ -73,7 +73,7 @@ void client_application::run() {
                 if (client.working()) {
                     std::string msg = client.get_handler().send_message(m_user_name, input.payload, buff, len);
                     ::write(client.get_fd(), buff, len);
-                    output_msg(msg);
+                    output_msg_echo(msg);
                 }
                 else {
                     output_error("no connection");
@@ -89,8 +89,18 @@ void client_application::run() {
             len = ::read(client.get_fd(), buff, BUFF_SIZE);
             logger->info("data coming, len {}", len);
             if (len > 0) {
-                buff[len] = 0;
-                output_msg(buff);
+                auto msgs = client.get_handler().receive_message(buff, len);
+                for (const auto &msg : msgs) {
+                    logger->info("type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
+                    if (msg.type == messge_type_t::MSG) {
+                        output_msg_recv("\n" + msg.to_string());
+                    }
+                    else if (msg.type == messge_type_t::CMD) {
+                    }
+                    else if (msg.type == messge_type_t::UNKNOWN) {
+                        logger->error("unknown message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
+                    }
+                }
             }
             else {
                 client.stop();
@@ -131,9 +141,17 @@ input_t client_application::process_input(const std::string &input_buff) {
     return ret;
 }
 
-void client_application::output_msg(const std::string &msg) {
+void client_application::output_msg_echo(const std::string &msg) {
     // green
     ::write(STDOUT_FILENO, "\x1b[0;32;49m", 10);
+    ::write(STDOUT_FILENO, msg.data(), msg.size());
+    ::write(STDOUT_FILENO, "\n", 1);
+    ::write(STDOUT_FILENO, "\x1b[0m", 4);
+}
+
+void client_application::output_msg_recv(const std::string &msg) {
+    // green
+    ::write(STDOUT_FILENO, "\x1b[0;33;49m", 10);
     ::write(STDOUT_FILENO, msg.data(), msg.size());
     ::write(STDOUT_FILENO, "\n", 1);
     ::write(STDOUT_FILENO, "\x1b[0m", 4);

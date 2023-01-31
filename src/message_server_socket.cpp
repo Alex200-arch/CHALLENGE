@@ -49,7 +49,7 @@ void message_server_socket::running() {
     usleep(500000);
 
     const size_t EVENTS_SIZE = 20;
-    const size_t BUFF_SIZE = 1024;
+    const size_t BUFF_SIZE = 4096;
 
     epoll_event events[EVENTS_SIZE];
 
@@ -92,7 +92,25 @@ void message_server_socket::running() {
                     int len = ::read(msg_fd, buff, BUFF_SIZE);
                     if (len > 0) {
                         if (auto ptr_handler = get_handler(msg_fd); ptr_handler) {
-                            ptr_handler->receive_message(buff, len);
+                            auto msgs = ptr_handler->receive_message(buff, len);
+                            for (const auto &msg : msgs) {
+                                logger->info("type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
+                                if (msg.type == messge_type_t::MSG) {
+                                    ptr_handler->make_network_message(msg, buff, len);
+                                    if (msg.to == "all") {
+                                        ::write(msg_fd, buff, len);
+                                    }
+                                    else {
+                                        // ::write(client.get_fd(), buff, len);
+                                        ::write(msg_fd, buff, len);
+                                    }
+                                }
+                                else if (msg.type == messge_type_t::CMD) {
+                                }
+                                else if (msg.type == messge_type_t::UNKNOWN) {
+                                    logger->error("unknown message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
+                                }
+                            }
                         }
                     }
                     else if (len == 0) {
