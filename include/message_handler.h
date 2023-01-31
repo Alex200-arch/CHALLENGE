@@ -15,6 +15,7 @@ struct message {
     std::string from;
     std::string to;
     std::string payload;
+    long timestamp;
 };
 
 class message_handler {

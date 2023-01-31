@@ -39,6 +39,8 @@ void message_handler::parse_message(char *buff, const int &len) {
             int32_t *p_payload_length = (int32_t *) (m_buff + m_buff_r_pos + 4 + 2 + 4 + *p_from_length + 4 + *p_to_length);
             msg.payload = std::string(m_buff + m_buff_r_pos + 4 + 2 + 4 + *p_from_length + 4 + *p_to_length + 4, *p_payload_length);
 
+            msg.timestamp = *(long *) (m_buff + m_buff_r_pos + 4 + 2 + 4 + *p_from_length + 4 + *p_to_length + 4 + *p_payload_length);
+
             m_messages.push_back(msg);
 
             m_buff_r_pos += *p_package_length;
@@ -73,4 +75,5 @@ void message_handler::make_message(const message &msg, char *buff, int32_t &len)
     memcpy(buff + 4 + 2 + 4 + from_length + 4, msg.to.data(), to_length);
     memcpy(buff + 4 + 2 + 4 + from_length + 4 + to_length, &payload_length, 4);
     memcpy(buff + 4 + 2 + 4 + from_length + 4 + to_length + 4, msg.payload.data(), payload_length);
+    memcpy(buff + 4 + 2 + 4 + from_length + 4 + to_length + 4 + payload_length, &msg.timestamp, sizeof(msg.timestamp));
 }
