@@ -16,13 +16,30 @@ struct message {
     std::string to;
     std::string payload;
     long timestamp;
+
+    std::string to_string() {
+        // timestamp (broadcast from) from: payload
+        // 2021/06/04 15:35:40 tom: hi xx
+        // 2021/06/04 15:35:40 broadcast from tom: hi xx
+        struct tm timeinfo;
+        localtime_r(&timestamp, &timeinfo);
+        char time_formator[20] = {0};
+        sprintf(time_formator, "%d/%.2d/%.2d %.2d:%.2d:%.2d", timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+        std::string ret(time_formator);
+        if (to == "all") {
+            ret += " broadcast from";
+        }
+        ret += " " + from + ": ";
+        ret += payload;
+        return ret;
+    }
 };
 
 class message_handler {
 public:
     message_handler();
     void receive_message(char *, const int &);
-    void send_message(const std::string &, const std::string &, char *, int &);
+    std::string send_message(const std::string &, const std::string &, char *, int &);
 
 protected:
 private:

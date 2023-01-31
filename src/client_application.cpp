@@ -71,8 +71,9 @@ void client_application::run() {
             }
             else if (input.type == input_type_t::CMD_SEND) {
                 if (client.working()) {
-                    client.get_handler().send_message(m_user_name, input.payload, buff, len);
+                    std::string msg = client.get_handler().send_message(m_user_name, input.payload, buff, len);
                     ::write(client.get_fd(), buff, len);
+                    output_msg(msg);
                 }
                 else {
                     output_error("no connection");

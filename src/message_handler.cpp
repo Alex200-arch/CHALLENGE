@@ -9,8 +9,9 @@ void message_handler::receive_message(char *buff, const int &len) {
     process_message();
 }
 
-void message_handler::send_message(const std::string &from, const std::string &buff, char *out_buff, int &out_len) {
-    parse_input_message(from, buff);
+std::string message_handler::send_message(const std::string &from, const std::string &buff, char *out_buff, int &out_len) {
+    message msg = parse_input_message(from, buff);
+    return msg.to_string();
 }
 
 /*
