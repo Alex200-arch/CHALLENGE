@@ -6,7 +6,7 @@
 #include <vector>
 
 enum class messge_type_t : int16_t {
-    CMD = 1,
+    LOGIN = 1,
     MSG = 2,
     UNKNOWN
 };

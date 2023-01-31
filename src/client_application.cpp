@@ -45,8 +45,15 @@ void client_application::run() {
             if (input.type == input_type_t::CMD_CONNECT) {
                 if (!client.working()) {
                     if (client.start(input.payload)) {
-                        m_prompt = input.payload + "|" + m_user_name + "> ";
-                        output_msg_recv("welcome " + m_user_name + "!!!");
+                        // send login at here. todo
+                        if (true) {
+                            m_prompt = input.payload + "|" + m_user_name + "> ";
+                            output_msg_recv("welcome " + m_user_name + "!!!");
+                        }
+                        else {
+                            output_msg_recv("hello " + m_user_name + ", password is not proper.");
+                            client.stop();
+                        }
                     }
                     else {
                         output_error("connection failed");
@@ -95,7 +102,7 @@ void client_application::run() {
                     if (msg.type == messge_type_t::MSG) {
                         output_msg_recv("\n" + msg.to_string());
                     }
-                    else if (msg.type == messge_type_t::CMD) {
+                    else if (msg.type == messge_type_t::LOGIN) {
                     }
                     else if (msg.type == messge_type_t::UNKNOWN) {
                         logger->error("unknown message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);

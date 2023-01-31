@@ -91,7 +91,7 @@ void message_server_socket::running() {
                     int msg_fd = events[i].data.fd;
                     int len = ::read(msg_fd, buff, BUFF_SIZE);
                     if (len > 0) {
-                        if (auto ptr_handler = get_handler(msg_fd); ptr_handler) {
+                        if (auto ptr_handler = get_handler_by_fd(msg_fd); ptr_handler) {
                             auto msgs = ptr_handler->receive_message(buff, len);
                             for (const auto &msg : msgs) {
                                 logger->info("type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
@@ -105,7 +105,7 @@ void message_server_socket::running() {
                                         ::write(msg_fd, buff, len);
                                     }
                                 }
-                                else if (msg.type == messge_type_t::CMD) {
+                                else if (msg.type == messge_type_t::LOGIN) {
                                 }
                                 else if (msg.type == messge_type_t::UNKNOWN) {
                                     logger->error("unknown message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);

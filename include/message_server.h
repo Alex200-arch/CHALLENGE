@@ -23,7 +23,7 @@ protected:
         }
     }
 
-    std::shared_ptr<message_handler> get_handler(int fd) {
+    std::shared_ptr<message_handler> get_handler_by_fd(int fd) {
         std::shared_ptr<message_handler> ret;
         if (auto it = m_handlers.find(fd); it != m_handlers.end()) {
             ret = m_handlers[fd];
