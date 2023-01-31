@@ -11,6 +11,7 @@ client_application::client_application(const std::string &user_name)
 void client_application::run() {
     const size_t BUFF_SIZE = 4096;
     char buff[BUFF_SIZE];
+    int len;
 
     fd_set rfds;
     int nfds;
@@ -33,7 +34,7 @@ void client_application::run() {
         select(nfds, &rfds, NULL, NULL, NULL);
 
         if (FD_ISSET(STDIN_FILENO, &rfds)) {
-            int len = ::read(STDIN_FILENO, buff, BUFF_SIZE);
+            len = ::read(STDIN_FILENO, buff, BUFF_SIZE);
             len--; // remove LF; \n(10, LF), \r(13, CR)
             if (len == 0) {
                 continue;
@@ -70,7 +71,8 @@ void client_application::run() {
             }
             else if (input.type == input_type_t::CMD_SEND) {
                 if (client.working()) {
-                    ::write(client.get_fd(), input.payload.data(), input.payload.size());
+                    client.get_handler().send_message(m_user_name, input.payload, buff, len);
+                    ::write(client.get_fd(), buff, len);
                 }
                 else {
                     output_error("no connection");
@@ -83,7 +85,7 @@ void client_application::run() {
         }
 
         if (FD_ISSET(client.get_fd(), &rfds)) {
-            int len = ::read(client.get_fd(), buff, BUFF_SIZE);
+            len = ::read(client.get_fd(), buff, BUFF_SIZE);
             logger->info("data coming, len {}", len);
             if (len > 0) {
                 buff[len] = 0;

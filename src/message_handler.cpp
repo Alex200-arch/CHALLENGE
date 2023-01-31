@@ -1,12 +1,16 @@
 #include "message_handler.h"
 #include "log.h"
 
-message_handler::message_handler(const int &fd)
-    : m_fd(fd) {
+message_handler::message_handler() {
 }
 
-void message_handler::add_message(char *buff, const int &len) {
-    parse_message(buff, len);
+void message_handler::receive_message(char *buff, const int &len) {
+    parse_network_message(buff, len);
+    process_message();
+}
+
+void message_handler::send_message(const std::string &from, const std::string &buff, char *out_buff, int &out_len) {
+    parse_input_message(from, buff);
 }
 
 /*
@@ -20,7 +24,7 @@ xxx             to_length
 payload_length  4
 xxx             payload_length
 */
-void message_handler::parse_message(char *buff, const int &len) {
+void message_handler::parse_network_message(char *buff, const int &len) {
     memcpy(m_buff + m_buff_w_pos, buff, len);
     m_buff_w_pos += len;
     while ((m_buff_w_pos - m_buff_r_pos) >= 4) {
@@ -62,7 +66,15 @@ void message_handler::parse_message(char *buff, const int &len) {
     }
 }
 
-void message_handler::make_message(const message &msg, char *buff, int32_t &len) {
+void message_handler::process_message() {
+    while (!m_messages.empty()) {
+        auto &msg = m_messages.front();
+        logger->info("type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
+        m_messages.pop_front();
+    }
+}
+
+void message_handler::make_network_message(const message &msg, char *buff, int32_t &len) {
     int32_t from_length = msg.from.size();
     int32_t to_length = msg.to.size();
     int32_t payload_length = msg.payload.size();
@@ -76,4 +88,18 @@ void message_handler::make_message(const message &msg, char *buff, int32_t &len)
     memcpy(buff + 4 + 2 + 4 + from_length + 4 + to_length, &payload_length, 4);
     memcpy(buff + 4 + 2 + 4 + from_length + 4 + to_length + 4, msg.payload.data(), payload_length);
     memcpy(buff + 4 + 2 + 4 + from_length + 4 + to_length + 4 + payload_length, &msg.timestamp, sizeof(msg.timestamp));
+}
+
+message message_handler::parse_input_message(const std::string &from, const std::string &buff) {
+    size_t pos = buff.find(' ');
+
+    message msg;
+
+    msg.type = messge_type_t::MSG;
+    msg.from = from;
+    msg.to = buff.substr(0, pos);
+    msg.payload = buff.substr(pos + 1);
+    msg.timestamp = time(NULL);
+
+    return msg;
 }

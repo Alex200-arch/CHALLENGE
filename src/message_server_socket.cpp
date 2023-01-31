@@ -92,7 +92,7 @@ void message_server_socket::running() {
                     int len = ::read(msg_fd, buff, BUFF_SIZE);
                     if (len > 0) {
                         if (auto ptr_handler = get_handler(msg_fd); ptr_handler) {
-                            ptr_handler->add_message(buff, len);
+                            ptr_handler->receive_message(buff, len);
                         }
                     }
                     else if (len == 0) {

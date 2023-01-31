@@ -5,9 +5,9 @@
 #include <string>
 
 enum class messge_type_t : int16_t {
-    cmd = 1,
-    msg = 2,
-    unknown
+    CMD = 1,
+    MSG = 2,
+    UNKNOWN
 };
 
 struct message {
@@ -20,14 +20,16 @@ struct message {
 
 class message_handler {
 public:
-    message_handler(const int &);
-    void add_message(char *, const int &);
+    message_handler();
+    void receive_message(char *, const int &);
+    void send_message(const std::string &, const std::string &, char *, int &);
 
 protected:
 private:
-    void parse_message(char *, const int &);
-    void make_message(const message &, char *, int32_t &);
-    int m_fd;
+    void parse_network_message(char *, const int &);
+    void process_message();
+    void make_network_message(const message &, char *, int32_t &);
+    message parse_input_message(const std::string &, const std::string &);
     char m_buff[2048];
     int m_buff_w_pos{0};
     int m_buff_r_pos{0};

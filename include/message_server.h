@@ -13,7 +13,7 @@ public:
 protected:
     void add_handler(int fd) {
         if (auto it = m_handlers.find(fd); it == m_handlers.end()) {
-            m_handlers[fd] = std::make_shared<message_handler>(fd);
+            m_handlers[fd] = std::make_shared<message_handler>();
         }
     }
 
