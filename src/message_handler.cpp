@@ -11,6 +11,7 @@ void message_handler::receive_message(char *buff, const int &len) {
 
 std::string message_handler::send_message(const std::string &from, const std::string &buff, char *out_buff, int &out_len) {
     message msg = parse_input_message(from, buff);
+    make_network_message(msg, out_buff, out_len);
     return msg.to_string();
 }
 
@@ -79,7 +80,7 @@ void message_handler::make_network_message(const message &msg, char *buff, int32
     int32_t from_length = msg.from.size();
     int32_t to_length = msg.to.size();
     int32_t payload_length = msg.payload.size();
-    len = 4 + 2 + 4 + from_length + 4 + to_length + 4 + payload_length;
+    len = 4 + 2 + 4 + from_length + 4 + to_length + 4 + payload_length + sizeof(msg.timestamp);
     memcpy(buff, &len, 4);
     memcpy(buff + 4, &msg.type, 2);
     memcpy(buff + 4 + 2, &from_length, 4);
