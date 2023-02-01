@@ -1,5 +1,6 @@
 #include <netinet/in.h>
 #include <signal.h>
+#include <sstream>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 
@@ -110,6 +111,17 @@ void message_server_socket::running() {
                                     }
                                 }
                                 else if (msg.type == messge_type_t::LOGIN) {
+                                    logger->info("login message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
+                                    message msg_response;
+                                    msg_response.type = messge_type_t::LOGIN;
+                                    msg_response.from = "OK";
+                                    srand(time(NULL));
+                                    int r = rand();
+                                    std::stringstream ss;
+                                    ss << "please save your password: " << r;
+                                    msg_response.payload = ss.str();
+                                    ptr_handler->make_network_message(msg_response, buff, len);
+                                    ::write(msg_fd, buff, len);
                                 }
                                 else if (msg.type == messge_type_t::UNKNOWN) {
                                     logger->error("unknown message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);

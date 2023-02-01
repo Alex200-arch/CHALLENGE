@@ -18,7 +18,7 @@ struct input_t {
 
 class client_application {
 public:
-    client_application(const std::string &);
+    client_application(const std::string &, const std::string &);
 
     void run();
 
@@ -28,6 +28,7 @@ private:
     void output_msg_recv(const std::string &);
     void output_error(const std::string &);
     std::string m_user_name;
+    std::string m_user_password;
     std::string m_prompt;
 };
 

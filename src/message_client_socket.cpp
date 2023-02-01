@@ -47,13 +47,18 @@ void message_client_socket::stop() {
         m_fd = -1;
         logger->info("disconnected");
     }
+    m_working = false;
 }
 
 bool message_client_socket::working() const {
-    if (m_fd == -1) {
+    if (!m_working) {
         return false;
     }
     return true;
+}
+
+void message_client_socket::set_working() {
+    m_working = true;
 }
 
 int message_client_socket::get_fd() const {

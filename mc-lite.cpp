@@ -5,6 +5,7 @@
 
 int main(int argc, char *argv[]) {
     std::string name;
+    std::string password;
     cxxopts::Options options("mc-lite", "message client");
     try {
         options.add_options()("n,name", "user name", cxxopts::value<std::string>())("p,password", "user password", cxxopts::value<std::string>())("h,help", "print usage");
@@ -19,7 +20,6 @@ int main(int argc, char *argv[]) {
             name = result["name"].as<std::string>();
         }
 
-        std::string password;
         if (result.count("password")) {
             password = result["password"].as<std::string>();
         }
@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (!name.empty()) {
-        client_application app(name);
+        client_application app(name, password);
         app.run();
     }
     else {

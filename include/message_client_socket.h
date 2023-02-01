@@ -8,11 +8,13 @@ public:
     bool start(const std::string &) override;
     void stop() override;
     bool working() const override;
+    void set_working() override;
     int get_fd() const override;
 
 protected:
 private:
     int m_fd{-1};
+    bool m_working{false};
 };
 
 #endif // MESSAGE_CLIENT_SOCKET_H

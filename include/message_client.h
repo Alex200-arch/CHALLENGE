@@ -10,6 +10,7 @@ public:
     virtual bool start(const std::string &) = 0;
     virtual void stop() = 0;
     virtual bool working() const = 0;
+    virtual void set_working() = 0;
     virtual int get_fd() const = 0;
 
     message_handler &get_handler() {

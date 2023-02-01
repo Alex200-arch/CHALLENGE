@@ -2,8 +2,9 @@
 #include "log.h"
 #include "message_client_socket.h"
 
-client_application::client_application(const std::string &user_name)
+client_application::client_application(const std::string &user_name, const std::string &user_password)
     : m_user_name(user_name)
+    , m_user_password(user_password)
     , m_prompt(user_name + "> ") {
     init_logger(m_user_name, m_user_name + ".log");
 }
@@ -46,9 +47,24 @@ void client_application::run() {
                 if (!client->working()) {
                     if (client->start(input.payload)) {
                         // send login at here. todo
-                        if (true) {
+                        message msg;
+                        msg.type = messge_type_t::LOGIN;
+                        msg.from = m_user_name;
+                        msg.payload = m_user_password;
+                        msg.timestamp = time(NULL);
+                        client->get_handler().make_network_message(msg, buff, len);
+                        ::write(client->get_fd(), buff, len);
+                        // recv
+                        std::vector<message> msgs;
+                        while (msgs.empty()) {
+                            len = ::read(client->get_fd(), buff, BUFF_SIZE);
+                            msgs = client->get_handler().receive_message(buff, len);
+                        }
+
+                        if (msgs.size() == 1 && msgs[0].type == messge_type_t::LOGIN && msgs[0].from == "OK") {
                             m_prompt = input.payload + "|" + m_user_name + "> ";
-                            output_msg_recv("welcome " + m_user_name + "!!!");
+                            output_msg_recv("hello " + m_user_name + "!!! " + msgs[0].payload);
+                            client->set_working();
                         }
                         else {
                             output_msg_recv("hello " + m_user_name + ", password is not proper.");
