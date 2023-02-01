@@ -6,11 +6,15 @@
 #include "log.h"
 #include "message_server_socket.h"
 
+message_server_socket::message_server_socket(const int &port)
+    : m_port(port) {
+}
+
 bool message_server_socket::start() {
     m_socket_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     sockaddr_in sock_addr{};
-    sock_addr.sin_port = htons(23235);
+    sock_addr.sin_port = htons(m_port);
     sock_addr.sin_family = AF_INET;
     sock_addr.sin_addr.s_addr = htons(INADDR_ANY);
 

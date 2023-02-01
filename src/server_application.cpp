@@ -3,11 +3,11 @@
 #include "log.h"
 #include "server_application.h"
 
-server_application::server_application(const std::string &application_name)
+server_application::server_application(const std::string &application_name, const int &port)
     : m_pid_file_name(application_name + ".pid")
     , m_log_file_name(application_name + ".log")
     , m_logger_name(application_name)
-    , m_server(std::unique_ptr<message_server>(message_server_creator<message_server_socket>().create_message_server())) {
+    , m_server(std::unique_ptr<message_server>(message_server_creator<message_server_socket>().create_message_server(port))) {
     init_logger(m_logger_name, m_log_file_name);
 }
 

@@ -9,7 +9,7 @@
 
 class server_application {
 public:
-    server_application(const std::string &);
+    server_application(const std::string &, const int &);
 
     void run();
 

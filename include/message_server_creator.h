@@ -7,7 +7,8 @@
 template <typename T>
 class message_server_creator {
 public:
-    message_server *create_message_server() {
+    template <typename... Args>
+    message_server *create_message_server(Args &&...args) {
         return nullptr;
     }
 };
@@ -15,8 +16,9 @@ public:
 template <>
 class message_server_creator<message_server_socket> {
 public:
-    message_server *create_message_server() {
-        return new message_server_socket();
+    template <typename... Args>
+    message_server *create_message_server(Args &&...args) {
+        return new message_server_socket(std::forward<Args>(args)...);
     }
 };
 

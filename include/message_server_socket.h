@@ -9,12 +9,14 @@
 
 class message_server_socket : public message_server {
 public:
+    message_server_socket(const int &);
     bool start() override;
     void stop() override;
 
 protected:
 private:
     void running();
+    int m_port;
     std::atomic_bool m_keep_going{true};
     int m_socket_fd{-1};
     int m_epoll_fd{-1};
