@@ -16,7 +16,7 @@ void client_application::run() {
     fd_set rfds;
     int nfds;
 
-    message_client_socket client;
+    std::unique_ptr<message_client> client(new message_client_socket());
 
     while (true) {
         ::write(STDOUT_FILENO, m_prompt.data(), m_prompt.size());
@@ -26,9 +26,9 @@ void client_application::run() {
         FD_SET(STDIN_FILENO, &rfds);
         nfds = 1;
 
-        if (client.working()) {
-            FD_SET(client.get_fd(), &rfds);
-            nfds = client.get_fd() + 1;
+        if (client->working()) {
+            FD_SET(client->get_fd(), &rfds);
+            nfds = client->get_fd() + 1;
         }
 
         select(nfds, &rfds, NULL, NULL, NULL);
@@ -43,8 +43,8 @@ void client_application::run() {
             logger->info("input {}, len {}", buff, len);
             auto input = process_input(buff);
             if (input.type == input_type_t::CMD_CONNECT) {
-                if (!client.working()) {
-                    if (client.start(input.payload)) {
+                if (!client->working()) {
+                    if (client->start(input.payload)) {
                         // send login at here. todo
                         if (true) {
                             m_prompt = input.payload + "|" + m_user_name + "> ";
@@ -52,7 +52,7 @@ void client_application::run() {
                         }
                         else {
                             output_msg_recv("hello " + m_user_name + ", password is not proper.");
-                            client.stop();
+                            client->stop();
                         }
                     }
                     else {
@@ -64,8 +64,8 @@ void client_application::run() {
                 }
             }
             else if (input.type == input_type_t::CMD_DISCONNECT) {
-                if (client.working()) {
-                    client.stop();
+                if (client->working()) {
+                    client->stop();
                     m_prompt = m_user_name + "> ";
                 }
                 else {
@@ -77,9 +77,9 @@ void client_application::run() {
                 break;
             }
             else if (input.type == input_type_t::CMD_SEND) {
-                if (client.working()) {
-                    std::string msg = client.get_handler().send_message(m_user_name, input.payload, buff, len);
-                    ::write(client.get_fd(), buff, len);
+                if (client->working()) {
+                    std::string msg = client->get_handler().send_message(m_user_name, input.payload, buff, len);
+                    ::write(client->get_fd(), buff, len);
                     output_msg_echo(msg);
                 }
                 else {
@@ -92,11 +92,11 @@ void client_application::run() {
             }
         }
 
-        if (FD_ISSET(client.get_fd(), &rfds)) {
-            len = ::read(client.get_fd(), buff, BUFF_SIZE);
+        if (FD_ISSET(client->get_fd(), &rfds)) {
+            len = ::read(client->get_fd(), buff, BUFF_SIZE);
             logger->info("data coming, len {}", len);
             if (len > 0) {
-                auto msgs = client.get_handler().receive_message(buff, len);
+                auto msgs = client->get_handler().receive_message(buff, len);
                 for (const auto &msg : msgs) {
                     logger->info("type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
                     if (msg.type == messge_type_t::MSG) {
@@ -110,7 +110,7 @@ void client_application::run() {
                 }
             }
             else {
-                client.stop();
+                client->stop();
                 logger->error("server shutdown");
                 output_error("\nserver shutdown");
                 m_prompt = m_user_name + "> ";
