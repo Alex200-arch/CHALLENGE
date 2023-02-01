@@ -3,11 +3,16 @@
 
 #include <unordered_map>
 
+#include "csv.hpp"
 #include "message_handler.h"
 
 class message_server {
 public:
     message_server() {
+        csv::CSVReader reader("usr_info.csv");
+        for (csv::CSVRow &row : reader) {
+            m_name_to_password[row[0].get<>()] = row[1].get<>();
+        }
     }
     virtual bool start() = 0;
     virtual void stop() = 0;
@@ -74,6 +79,13 @@ protected:
 
     void save_password(const std::string &user_name, const std::string &password) {
         m_name_to_password[user_name] = password;
+        std::ofstream outfile;
+        outfile.open("usr_info.csv", std::ofstream::out | std::ofstream::trunc);
+        auto writer = csv::make_csv_writer(outfile);
+        writer << std::vector<std::string>({"name", "password"});
+        for (const auto &[name, password] : m_name_to_password) {
+            writer << std::vector<std::string>({name, password});
+        }
     }
 
 private:
