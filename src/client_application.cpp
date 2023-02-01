@@ -46,7 +46,6 @@ void client_application::run() {
             if (input.type == input_type_t::CMD_CONNECT) {
                 if (!client->working()) {
                     if (client->start(input.payload)) {
-                        // send login at here. todo
                         message msg;
                         msg.type = messge_type_t::LOGIN;
                         msg.from = m_user_name;
