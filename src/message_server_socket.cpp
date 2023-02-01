@@ -120,21 +120,37 @@ void message_server_socket::running() {
                                 }
                                 else if (msg.type == messge_type_t::LOGIN) {
                                     logger->info("login message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
-
-                                    // todo password checking
-
-                                    message msg_response;
-                                    msg_response.type = messge_type_t::LOGIN;
-                                    msg_response.from = "OK";
-                                    srand(time(NULL));
-                                    int r = rand();
-                                    std::stringstream ss;
-                                    ss << "please save your password: " << r;
-                                    msg_response.payload = ss.str();
-                                    ptr_handler->make_network_message(msg_response, buff, len);
+                                    auto result = check_password(msg.from, msg.payload);
+                                    if (result) {
+                                        if (result.value()) {
+                                            message msg_response;
+                                            msg_response.type = messge_type_t::LOGIN;
+                                            msg_response.from = "OK";
+                                            msg_response.payload = "welcome back.";
+                                            ptr_handler->make_network_message(msg_response, buff, len);
+                                            login_handler(msg.from, msg_fd);
+                                        }
+                                        else {
+                                            message msg_response;
+                                            msg_response.type = messge_type_t::LOGIN;
+                                            msg_response.from = "Fail";
+                                            ptr_handler->make_network_message(msg_response, buff, len);
+                                        }
+                                    }
+                                    else {
+                                        message msg_response;
+                                        msg_response.type = messge_type_t::LOGIN;
+                                        msg_response.from = "OK";
+                                        srand(time(NULL));
+                                        int r = rand();
+                                        std::stringstream ss;
+                                        ss << r;
+                                        msg_response.payload = "please save your password: " + ss.str();
+                                        ptr_handler->make_network_message(msg_response, buff, len);
+                                        login_handler(msg.from, msg_fd);
+                                        save_password(msg.from, ss.str());
+                                    }
                                     ::write(msg_fd, buff, len);
-
-                                    login_handler(msg.from, msg_fd);
                                 }
                                 else if (msg.type == messge_type_t::UNKNOWN) {
                                     logger->error("unknown message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);

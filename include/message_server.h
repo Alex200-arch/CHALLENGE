@@ -7,6 +7,8 @@
 
 class message_server {
 public:
+    message_server() {
+    }
     virtual bool start() = 0;
     virtual void stop() = 0;
 
@@ -60,10 +62,25 @@ protected:
         return ret;
     }
 
+    std::optional<bool> check_password(const std::string &user_name, const std::string &password) {
+        if (auto it = m_name_to_password.find(user_name); it != m_name_to_password.end()) {
+            if (it->second == password) {
+                return true;
+            }
+            return false;
+        }
+        return {};
+    }
+
+    void save_password(const std::string &user_name, const std::string &password) {
+        m_name_to_password[user_name] = password;
+    }
+
 private:
     std::unordered_map<int, std::shared_ptr<message_handler>> m_handlers;
     std::unordered_map<std::string, int> m_name_to_fd;
     std::unordered_map<int, std::string> m_fd_to_name;
+    std::unordered_map<std::string, std::string> m_name_to_password;
 };
 
 #endif // MESSAGE_SERVER_H
