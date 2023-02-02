@@ -12,6 +12,14 @@ enum class messge_type_t : int16_t {
 };
 
 struct message {
+    message() = default;
+    message(messge_type_t type_, std::string from_, std::string to_, std::string payload_, long timestamp_)
+        : type(type_)
+        , from(from_)
+        , to(to_)
+        , payload(payload_)
+        , timestamp(timestamp_) {
+    }
     messge_type_t type;
     std::string from;
     std::string to;

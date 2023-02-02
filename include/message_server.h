@@ -9,11 +9,38 @@
 class message_server {
 public:
     message_server() {
-        csv::CSVReader reader("usr_info.csv");
-        for (csv::CSVRow &row : reader) {
+        csv::CSVReader reader_user_info("usr_info.csv");
+        for (csv::CSVRow &row : reader_user_info) {
             m_name_to_password[row[0].get<>()] = row[1].get<>();
         }
+
+        csv::CSVReader reader_offline("off_line_message.csv");
+        for (csv::CSVRow &row : reader_offline) {
+            // name,type,from,to,payload,timestamp
+            m_storage_name_to_msg[row[0].get<>()].emplace_back(static_cast<messge_type_t>(row[1].get<int16_t>()), row[2].get<>(), row[3].get<>(), row[4].get<>(), row[5].get<long>());
+        }
     }
+
+    virtual ~message_server() {
+        std::ofstream outfile_user_info;
+        outfile_user_info.open("usr_info.csv", std::ofstream::out | std::ofstream::trunc);
+        auto writer_user_info = csv::make_csv_writer(outfile_user_info);
+        writer_user_info << std::vector<std::string>({"name", "password"});
+        for (const auto &[name, password] : m_name_to_password) {
+            writer_user_info << std::vector<std::string>({name, password});
+        }
+
+        std::ofstream outfile_offline;
+        outfile_offline.open("off_line_message.csv", std::ofstream::out | std::ofstream::trunc);
+        auto writer_off_line = csv::make_csv_writer(outfile_offline);
+        writer_off_line << std::vector<std::string>({"name", "type", "from", "to", "payload", "timestamp"});
+        for (const auto &[name, msgs] : m_storage_name_to_msg) {
+            for (const auto &msg : msgs) {
+                writer_off_line << std::make_tuple(name, static_cast<int16_t>(msg.type), msg.from, msg.to, msg.payload, msg.timestamp);
+            }
+        }
+    }
+
     virtual bool start() = 0;
     virtual void stop() = 0;
 
@@ -79,13 +106,6 @@ protected:
 
     void save_password(const std::string &user_name, const std::string &password) {
         m_name_to_password[user_name] = password;
-        std::ofstream outfile;
-        outfile.open("usr_info.csv", std::ofstream::out | std::ofstream::trunc);
-        auto writer = csv::make_csv_writer(outfile);
-        writer << std::vector<std::string>({"name", "password"});
-        for (const auto &[name, password] : m_name_to_password) {
-            writer << std::vector<std::string>({name, password});
-        }
     }
 
     void save_msg_for_off_line_user(const std::string &user_name, const message &msg) {
