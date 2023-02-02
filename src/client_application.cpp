@@ -75,7 +75,7 @@ void client_application::run() {
                             client->set_working();
                         }
                         else {
-                            output_msg_recv("hello " + m_user_name + ", password is not proper.");
+                            output_msg_recv("hello " + m_user_name + "!!! " + msgs[0].payload);
                             client->stop();
                         }
                     }

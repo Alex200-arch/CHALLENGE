@@ -19,6 +19,7 @@ public:
     std::shared_ptr<message_handler> get_handler_by_fd(int);
     int get_fd_by_name(const std::string &) const;
     std::vector<int> get_others_fds_by_name(const std::string &) const;
+    bool logined(const std::string &) const;
     std::optional<bool> check_password(const std::string &, const std::string &) const;
     void save_password(const std::string &, const std::string &);
     void save_msg_for_off_line_user(const std::string &, const message &);

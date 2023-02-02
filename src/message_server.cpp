@@ -89,6 +89,13 @@ std::vector<int> message_server::get_others_fds_by_name(const std::string &user_
     return ret;
 }
 
+bool message_server::logined(const std::string &user_name) const {
+    if (auto it = m_name_to_fd.find(user_name); it != m_name_to_fd.end()) {
+        return true;
+    }
+    return false;
+}
+
 std::optional<bool> message_server::check_password(const std::string &user_name, const std::string &password) const {
     if (auto it = m_name_to_password.find(user_name); it != m_name_to_password.end()) {
         if (it->second == password) {

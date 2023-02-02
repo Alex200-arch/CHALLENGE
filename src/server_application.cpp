@@ -174,45 +174,58 @@ void server_application::running() {
                                 }
                                 else if (msg.type == messge_type_t::LOGIN) {
                                     logger->info("login message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
-                                    auto result = m_server->check_password(msg.from, msg.payload);
-                                    if (result) {
-                                        if (result.value()) {
-                                            message msg_response;
-                                            msg_response.type = messge_type_t::LOGIN;
-                                            msg_response.from = "OK";
-                                            msg_response.payload = "welcome back.";
-                                            ptr_handler->make_network_message(msg_response, buff, len);
-                                            m_server->login_handler(msg.from, msg_fd);
-                                            ::write(msg_fd, buff, len);
-
-                                            auto msgs = m_server->get_off_line_msg(msg.from);
-                                            logger->info("resend off line messages, size {}", msgs.size());
-                                            for (const auto &msg : msgs) {
-                                                ptr_handler->make_network_message(msg, buff, len);
+                                    if (m_server->logined(msg.from)) {
+                                        message msg_response;
+                                        msg_response.type = messge_type_t::LOGIN;
+                                        msg_response.from = "Fail";
+                                        msg_response.payload = "user have been logined";
+                                        ptr_handler->make_network_message(msg_response, buff, len);
+                                        ::write(msg_fd, buff, len);
+                                        logger->info("user have been logined");
+                                    }
+                                    else {
+                                        auto result = m_server->check_password(msg.from, msg.payload);
+                                        if (result) {
+                                            if (result.value()) {
+                                                message msg_response;
+                                                msg_response.type = messge_type_t::LOGIN;
+                                                msg_response.from = "OK";
+                                                msg_response.payload = "welcome back.";
+                                                ptr_handler->make_network_message(msg_response, buff, len);
+                                                m_server->login_handler(msg.from, msg_fd);
                                                 ::write(msg_fd, buff, len);
+
+                                                auto msgs = m_server->get_off_line_msg(msg.from);
+                                                logger->info("resend off line messages, size {}", msgs.size());
+                                                for (const auto &msg : msgs) {
+                                                    ptr_handler->make_network_message(msg, buff, len);
+                                                    ::write(msg_fd, buff, len);
+                                                }
+                                            }
+                                            else {
+                                                message msg_response;
+                                                msg_response.type = messge_type_t::LOGIN;
+                                                msg_response.from = "Fail";
+                                                msg_response.payload = "password is not proper.";
+                                                ptr_handler->make_network_message(msg_response, buff, len);
+                                                ::write(msg_fd, buff, len);
+                                                logger->info("password is wrong");
                                             }
                                         }
                                         else {
                                             message msg_response;
                                             msg_response.type = messge_type_t::LOGIN;
-                                            msg_response.from = "Fail";
+                                            msg_response.from = "OK";
+                                            srand(time(NULL));
+                                            int r = rand();
+                                            std::stringstream ss;
+                                            ss << r;
+                                            msg_response.payload = "please save your password: " + ss.str();
                                             ptr_handler->make_network_message(msg_response, buff, len);
+                                            m_server->login_handler(msg.from, msg_fd);
+                                            m_server->save_password(msg.from, ss.str());
                                             ::write(msg_fd, buff, len);
                                         }
-                                    }
-                                    else {
-                                        message msg_response;
-                                        msg_response.type = messge_type_t::LOGIN;
-                                        msg_response.from = "OK";
-                                        srand(time(NULL));
-                                        int r = rand();
-                                        std::stringstream ss;
-                                        ss << r;
-                                        msg_response.payload = "please save your password: " + ss.str();
-                                        ptr_handler->make_network_message(msg_response, buff, len);
-                                        m_server->login_handler(msg.from, msg_fd);
-                                        m_server->save_password(msg.from, ss.str());
-                                        ::write(msg_fd, buff, len);
                                     }
                                 }
                                 else if (msg.type == messge_type_t::UNKNOWN) {
