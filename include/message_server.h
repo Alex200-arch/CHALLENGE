@@ -9,15 +9,19 @@
 class message_server {
 public:
     message_server() {
-        csv::CSVReader reader_user_info("usr_info.csv");
-        for (csv::CSVRow &row : reader_user_info) {
-            m_name_to_password[row[0].get<>()] = row[1].get<>();
+        if (std::ifstream f("usr_info.csv"); f.good()) {
+            csv::CSVReader reader_user_info("usr_info.csv");
+            for (csv::CSVRow &row : reader_user_info) {
+                m_name_to_password[row[0].get<>()] = row[1].get<>();
+            }
         }
 
-        csv::CSVReader reader_offline("off_line_message.csv");
-        for (csv::CSVRow &row : reader_offline) {
-            // name,type,from,to,payload,timestamp
-            m_storage_name_to_msg[row[0].get<>()].emplace_back(static_cast<messge_type_t>(row[1].get<int16_t>()), row[2].get<>(), row[3].get<>(), row[4].get<>(), row[5].get<long>());
+        if (std::ifstream f("off_line_message.csv"); f.good()) {
+            csv::CSVReader reader_offline("off_line_message.csv");
+            for (csv::CSVRow &row : reader_offline) {
+                // name,type,from,to,payload,timestamp
+                m_storage_name_to_msg[row[0].get<>()].emplace_back(static_cast<messge_type_t>(row[1].get<int16_t>()), row[2].get<>(), row[3].get<>(), row[4].get<>(), row[5].get<long>());
+            }
         }
     }
 
