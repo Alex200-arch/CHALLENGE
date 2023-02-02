@@ -88,11 +88,27 @@ protected:
         }
     }
 
+    void save_msg_for_off_line_user(const std::string &user_name, const message &msg) {
+        if (auto it = m_name_to_password.find(user_name); it != m_name_to_password.end()) {
+            m_storage_name_to_msg[user_name].push_back(msg);
+        }
+    }
+
+    std::vector<message> get_off_line_msg(const std::string &user_name) {
+        if (auto it = m_storage_name_to_msg.find(user_name); it != m_storage_name_to_msg.end()) {
+            std::vector<message> msgs(it->second);
+            m_storage_name_to_msg.erase(it);
+            return msgs;
+        }
+        return {};
+    }
+
 private:
     std::unordered_map<int, std::shared_ptr<message_handler>> m_handlers;
     std::unordered_map<std::string, int> m_name_to_fd;
     std::unordered_map<int, std::string> m_fd_to_name;
     std::unordered_map<std::string, std::string> m_name_to_password;
+    std::unordered_map<std::string, std::vector<message>> m_storage_name_to_msg;
 };
 
 #endif // MESSAGE_SERVER_H

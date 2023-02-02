@@ -114,7 +114,7 @@ void message_server_socket::running() {
                                             ::write(fd, buff, len);
                                         }
                                         else {
-                                            // todo save then resend
+                                            save_msg_for_off_line_user(msg.to, msg);
                                         }
                                     }
                                 }
@@ -129,12 +129,21 @@ void message_server_socket::running() {
                                             msg_response.payload = "welcome back.";
                                             ptr_handler->make_network_message(msg_response, buff, len);
                                             login_handler(msg.from, msg_fd);
+                                            ::write(msg_fd, buff, len);
+
+                                            auto msgs = get_off_line_msg(msg.from);
+                                            logger->info("resend off line messages, size {}", msgs.size());
+                                            for (const auto &msg : msgs) {
+                                                ptr_handler->make_network_message(msg, buff, len);
+                                                ::write(msg_fd, buff, len);
+                                            }
                                         }
                                         else {
                                             message msg_response;
                                             msg_response.type = messge_type_t::LOGIN;
                                             msg_response.from = "Fail";
                                             ptr_handler->make_network_message(msg_response, buff, len);
+                                            ::write(msg_fd, buff, len);
                                         }
                                     }
                                     else {
@@ -149,8 +158,8 @@ void message_server_socket::running() {
                                         ptr_handler->make_network_message(msg_response, buff, len);
                                         login_handler(msg.from, msg_fd);
                                         save_password(msg.from, ss.str());
+                                        ::write(msg_fd, buff, len);
                                     }
-                                    ::write(msg_fd, buff, len);
                                 }
                                 else if (msg.type == messge_type_t::UNKNOWN) {
                                     logger->error("unknown message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);

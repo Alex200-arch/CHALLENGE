@@ -60,9 +60,18 @@ void client_application::run() {
                             msgs = client->get_handler().receive_message(buff, len);
                         }
 
-                        if (msgs.size() == 1 && msgs[0].type == messge_type_t::LOGIN && msgs[0].from == "OK") {
+                        if (msgs.size() >= 1 && msgs[0].type == messge_type_t::LOGIN && msgs[0].from == "OK") {
                             m_prompt = input.payload + "|" + m_user_name + "> ";
                             output_msg_recv("hello " + m_user_name + "!!! " + msgs[0].payload);
+                            ::write(STDOUT_FILENO, m_prompt.data(), m_prompt.size());
+                            for (int i = 1; i < msgs.size(); i++) {
+                                if (i == 1) {
+                                    output_msg_recv("\n" + msgs[i].to_string());
+                                }
+                                else {
+                                    output_msg_recv(msgs[i].to_string());
+                                }
+                            }
                             client->set_working();
                         }
                         else {
