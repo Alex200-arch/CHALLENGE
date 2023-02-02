@@ -1,7 +1,40 @@
 #include "message_handler.h"
 #include "log.h"
 
-message_handler::message_handler() {
+message::message(messge_type_t type_, std::string from_, std::string to_, std::string payload_, long timestamp_)
+    : type(type_)
+    , from(from_)
+    , to(to_)
+    , payload(payload_)
+    , timestamp(timestamp_) {
+}
+
+std::string message::to_string() const {
+    // timestamp (broadcast from) from: payload
+    // 2021/06/04 15:35:40 tom: hi xx
+    // 2021/06/04 15:35:40 broadcast from tom: hi xx
+    struct tm timeinfo;
+    localtime_r(&timestamp, &timeinfo);
+    char time_formator[20] = {0};
+    sprintf(time_formator, "%d/%.2d/%.2d %.2d:%.2d:%.2d", timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+    std::string ret(time_formator);
+    if (to == "all") {
+        ret += " broadcast from";
+    }
+    ret += " " + from + ": ";
+
+    std::stringstream ss(payload);
+    std::string out;
+    while (!ss.eof()) {
+        std::getline(ss, out, '\\');
+        ret += out;
+        ret += '\n';
+    }
+    if (ret[ret.size() - 1] == '\n') {
+        ret.erase(ret.size() - 1);
+    }
+
+    return ret;
 }
 
 std::vector<message> message_handler::receive_message(char *buff, const int &len) {
