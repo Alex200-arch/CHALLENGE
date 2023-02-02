@@ -2,6 +2,7 @@
 #define MESSAGE_HANDLER_H
 
 #include <list>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -39,7 +40,18 @@ struct message {
             ret += " broadcast from";
         }
         ret += " " + from + ": ";
-        ret += payload;
+
+        std::stringstream ss(payload);
+        std::string out;
+        while (!ss.eof()) {
+            std::getline(ss, out, '\\');
+            ret += out;
+            ret += '\n';
+        }
+        if (ret[ret.size() - 1] == '\n') {
+            ret.erase(ret.size() - 1);
+        }
+
         return ret;
     }
 };
