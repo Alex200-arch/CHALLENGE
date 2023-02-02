@@ -10,9 +10,9 @@ public:
     message_server();
     virtual ~message_server();
     virtual bool start() = 0;
-    virtual void stop() = 0;
+    virtual int get_fd() = 0;
+    virtual int new_connection() = 0;
 
-protected:
     void add_handler(int);
     void login_handler(const std::string &, int);
     void del_handler(int);
@@ -24,6 +24,7 @@ protected:
     void save_msg_for_off_line_user(const std::string &, const message &);
     std::vector<message> get_off_line_msg(const std::string &);
 
+protected:
 private:
     std::unordered_map<int, std::shared_ptr<message_handler>> m_handlers;
     std::unordered_map<std::string, int> m_name_to_fd;

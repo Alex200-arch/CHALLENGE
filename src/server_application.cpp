@@ -1,4 +1,5 @@
 #include <signal.h>
+#include <sys/epoll.h>
 
 #include "log.h"
 #include "server_application.h"
@@ -22,10 +23,18 @@ void server_application::run() {
     logger->info("application running ...");
 
     if (m_server->start()) {
+        m_epoll_fd = epoll_create(1);
+        epoll_event epev{};
+        epev.events = EPOLLIN;
+        epev.data.fd = m_server->get_fd();
+        epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, m_server->get_fd(), &epev);
+        m_runner = std::make_unique<std::thread>([this]() { running(); });
 
         keep_processing_signals(&sigs);
 
-        m_server->stop();
+        m_keep_runner_going = false;
+        m_runner->join();
+        logger->info("stop listening");
     }
 
     pid_file_close();
@@ -78,7 +87,7 @@ sigset_t server_application::setup_signal_handlers() const {
 }
 
 void server_application::keep_processing_signals(sigset_t *sigs) {
-    while (m_keep_going) {
+    while (m_keep_app_going) {
         siginfo_t signal_info;
         timespec timeout{1, 0};
         if (sigtimedwait(sigs, &signal_info, &timeout) == -1)
@@ -88,10 +97,138 @@ void server_application::keep_processing_signals(sigset_t *sigs) {
         case SIGINT:
         case SIGQUIT:
         case SIGTERM:
-            m_keep_going = false;
+            m_keep_app_going = false;
             break;
         default:
             logger->info("application does not support signal {}", signal_info.si_signo);
+        }
+    }
+}
+
+void server_application::running() {
+    logger->info("start listening ...");
+    usleep(500000);
+
+    const size_t EVENTS_SIZE = 20;
+    const size_t BUFF_SIZE = 4096;
+
+    epoll_event events[EVENTS_SIZE];
+
+    char buff[BUFF_SIZE];
+
+    while (m_keep_runner_going) {
+        int num = epoll_wait(m_epoll_fd, events, EVENTS_SIZE, 500);
+
+        if (num == -1) {
+            logger->error("epoll wait return -1, errno {}", errno);
+            kill(getpid(), SIGINT);
+            break;
+        }
+
+        for (int i = 0; i < num; i++) {
+            if (events[i].data.fd == m_server->get_fd()) {
+                if (events[i].events & EPOLLIN) {
+                    int new_fd = m_server->new_connection();
+                    if (new_fd > 0) {
+                        logger->info("new connection, fd {}", new_fd);
+                        epoll_event epev{};
+                        epev.events = EPOLLIN;
+                        epev.data.fd = new_fd;
+                        int flags = fcntl(new_fd, F_GETFL, 0);
+                        if (fcntl(new_fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+                            logger->error("new connection set no block error, fd {}", new_fd);
+                            continue;
+                        }
+                        epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, new_fd, &epev);
+                        m_server->add_handler(new_fd);
+                        logger->info("new connection added, fd {}", new_fd);
+                    }
+                }
+            }
+            else {
+                if (events[i].events & EPOLLIN) {
+                    int msg_fd = events[i].data.fd;
+                    int len = ::read(msg_fd, buff, BUFF_SIZE);
+                    if (len > 0) {
+                        if (auto ptr_handler = m_server->get_handler_by_fd(msg_fd); ptr_handler) {
+                            auto msgs = ptr_handler->receive_message(buff, len);
+                            for (const auto &msg : msgs) {
+                                logger->info("type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
+                                if (msg.type == messge_type_t::MSG) {
+                                    ptr_handler->make_network_message(msg, buff, len);
+                                    if (msg.to == "all") {
+                                        auto fds = m_server->get_others_fds_by_name(msg.from);
+                                        for (const auto &fd : fds) {
+                                            ::write(fd, buff, len);
+                                        }
+                                    }
+                                    else {
+                                        auto fd = m_server->get_fd_by_name(msg.to);
+                                        if (fd != -1) {
+                                            ::write(fd, buff, len);
+                                        }
+                                        else {
+                                            m_server->save_msg_for_off_line_user(msg.to, msg);
+                                        }
+                                    }
+                                }
+                                else if (msg.type == messge_type_t::LOGIN) {
+                                    logger->info("login message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
+                                    auto result = m_server->check_password(msg.from, msg.payload);
+                                    if (result) {
+                                        if (result.value()) {
+                                            message msg_response;
+                                            msg_response.type = messge_type_t::LOGIN;
+                                            msg_response.from = "OK";
+                                            msg_response.payload = "welcome back.";
+                                            ptr_handler->make_network_message(msg_response, buff, len);
+                                            m_server->login_handler(msg.from, msg_fd);
+                                            ::write(msg_fd, buff, len);
+
+                                            auto msgs = m_server->get_off_line_msg(msg.from);
+                                            logger->info("resend off line messages, size {}", msgs.size());
+                                            for (const auto &msg : msgs) {
+                                                ptr_handler->make_network_message(msg, buff, len);
+                                                ::write(msg_fd, buff, len);
+                                            }
+                                        }
+                                        else {
+                                            message msg_response;
+                                            msg_response.type = messge_type_t::LOGIN;
+                                            msg_response.from = "Fail";
+                                            ptr_handler->make_network_message(msg_response, buff, len);
+                                            ::write(msg_fd, buff, len);
+                                        }
+                                    }
+                                    else {
+                                        message msg_response;
+                                        msg_response.type = messge_type_t::LOGIN;
+                                        msg_response.from = "OK";
+                                        srand(time(NULL));
+                                        int r = rand();
+                                        std::stringstream ss;
+                                        ss << r;
+                                        msg_response.payload = "please save your password: " + ss.str();
+                                        ptr_handler->make_network_message(msg_response, buff, len);
+                                        m_server->login_handler(msg.from, msg_fd);
+                                        m_server->save_password(msg.from, ss.str());
+                                        ::write(msg_fd, buff, len);
+                                    }
+                                }
+                                else if (msg.type == messge_type_t::UNKNOWN) {
+                                    logger->error("unknown message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
+                                }
+                            }
+                        }
+                    }
+                    else if (len == 0) {
+                        logger->info("disconnection, fd {}", msg_fd);
+                        epoll_ctl(m_epoll_fd, EPOLL_CTL_DEL, msg_fd, nullptr);
+                        m_server->del_handler(msg_fd);
+                        ::close(msg_fd);
+                    }
+                }
+            }
         }
     }
 }

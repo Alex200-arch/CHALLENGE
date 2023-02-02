@@ -1,6 +1,6 @@
 #include "client_application.h"
 #include "log.h"
-#include "message_client_socket.h"
+#include "message_client_creator.h"
 
 client_application::client_application(const std::string &user_name, const std::string &user_password)
     : m_user_name(user_name)
@@ -17,7 +17,7 @@ void client_application::run() {
     fd_set rfds;
     int nfds;
 
-    std::unique_ptr<message_client> client(new message_client_socket());
+    std::unique_ptr<message_client> client(message_client_creator<message_client_socket>().create_message_client());
 
     while (true) {
         ::write(STDOUT_FILENO, m_prompt.data(), m_prompt.size());
