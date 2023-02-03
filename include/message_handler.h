@@ -28,14 +28,15 @@ class message_handler {
 public:
     message_handler() = default;
     std::vector<message> receive_message(char *, const int &);
-    std::string send_message(const std::string &, const std::string &, char *, int &);
-    void make_network_message(const message &, char *, int32_t &);
+    static std::string send_message(const std::string &, const std::string &, char *, int &);
+    static void make_network_message(const message &, char *, int32_t &);
 
 protected:
 private:
     void parse_network_message(char *, const int &);
     std::vector<message> process_message();
-    message parse_input_message(const std::string &, const std::string &);
+    static message parse_input_message(const std::string &, const std::string &);
+
     char m_buff[2048];
     int m_buff_w_pos{0};
     int m_buff_r_pos{0};

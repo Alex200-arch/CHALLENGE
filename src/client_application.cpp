@@ -51,7 +51,7 @@ void client_application::run() {
                         msg.from = m_user_name;
                         msg.payload = m_user_password;
                         msg.timestamp = time(NULL);
-                        client->get_handler().make_network_message(msg, buff, len);
+                        message_handler::make_network_message(msg, buff, len);
                         ::write(client->get_fd(), buff, len);
                         // recv
                         std::vector<message> msgs;
@@ -102,7 +102,7 @@ void client_application::run() {
             }
             else if (input.type == input_type_t::CMD_SEND) {
                 if (client->working()) {
-                    std::string msg = client->get_handler().send_message(m_user_name, input.payload, buff, len);
+                    std::string msg = message_handler::send_message(m_user_name, input.payload, buff, len);
                     ::write(client->get_fd(), buff, len);
                     output_msg_echo(msg);
                 }

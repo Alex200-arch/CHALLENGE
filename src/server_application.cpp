@@ -155,7 +155,7 @@ void server_application::running() {
                             for (const auto &msg : msgs) {
                                 logger->info("type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
                                 if (msg.type == messge_type_t::MSG) {
-                                    ptr_handler->make_network_message(msg, buff, len);
+                                    message_handler::make_network_message(msg, buff, len);
                                     if (msg.to == "all") {
                                         auto fds = m_server->get_others_fds_by_name(msg.from);
                                         for (const auto &fd : fds) {
@@ -179,7 +179,7 @@ void server_application::running() {
                                         msg_response.type = messge_type_t::LOGIN;
                                         msg_response.from = "Fail";
                                         msg_response.payload = "user have been logined";
-                                        ptr_handler->make_network_message(msg_response, buff, len);
+                                        message_handler::make_network_message(msg_response, buff, len);
                                         ::write(msg_fd, buff, len);
                                         logger->info("user have been logined");
                                     }
@@ -191,14 +191,14 @@ void server_application::running() {
                                                 msg_response.type = messge_type_t::LOGIN;
                                                 msg_response.from = "OK";
                                                 msg_response.payload = "welcome back.";
-                                                ptr_handler->make_network_message(msg_response, buff, len);
+                                                message_handler::make_network_message(msg_response, buff, len);
                                                 m_server->login_handler(msg.from, msg_fd);
                                                 ::write(msg_fd, buff, len);
 
                                                 auto msgs = m_server->get_off_line_msg(msg.from);
                                                 logger->info("resend off line messages, size {}", msgs.size());
                                                 for (const auto &msg : msgs) {
-                                                    ptr_handler->make_network_message(msg, buff, len);
+                                                    message_handler::make_network_message(msg, buff, len);
                                                     ::write(msg_fd, buff, len);
                                                 }
                                             }
@@ -207,7 +207,7 @@ void server_application::running() {
                                                 msg_response.type = messge_type_t::LOGIN;
                                                 msg_response.from = "Fail";
                                                 msg_response.payload = "password is not proper.";
-                                                ptr_handler->make_network_message(msg_response, buff, len);
+                                                message_handler::make_network_message(msg_response, buff, len);
                                                 ::write(msg_fd, buff, len);
                                                 logger->info("password is wrong");
                                             }
@@ -221,7 +221,7 @@ void server_application::running() {
                                             std::stringstream ss;
                                             ss << r;
                                             msg_response.payload = "please save your password: " + ss.str();
-                                            ptr_handler->make_network_message(msg_response, buff, len);
+                                            message_handler::make_network_message(msg_response, buff, len);
                                             m_server->login_handler(msg.from, msg_fd);
                                             m_server->save_password(msg.from, ss.str());
                                             ::write(msg_fd, buff, len);
@@ -241,6 +241,14 @@ void server_application::running() {
                         ::close(msg_fd);
                     }
                 }
+            }
+        }
+
+        ////// heartbeat
+        {
+            static time_t t = time(NULL);
+            if (difftime(time(NULL), t) > 10.0f) {
+                t = time(NULL);
             }
         }
     }
