@@ -15,14 +15,20 @@ void client_application::run() {
     int len;
 
     fd_set rfds;
+    struct timeval tv;
     int nfds;
 
     std::unique_ptr<message_client> client(message_client_creator<message_client_socket>().create_message_client());
 
     while (true) {
-        ::write(STDOUT_FILENO, m_prompt.data(), m_prompt.size());
+        if (m_prompt_write) {
+            ::write(STDOUT_FILENO, m_prompt.data(), m_prompt.size());
+            m_prompt_write = false;
+        }
 
         FD_ZERO(&rfds);
+        tv.tv_sec = 5;
+        tv.tv_usec = 0;
 
         FD_SET(STDIN_FILENO, &rfds);
         nfds = 1;
@@ -32,9 +38,10 @@ void client_application::run() {
             nfds = client->get_fd() + 1;
         }
 
-        select(nfds, &rfds, NULL, NULL, NULL);
+        select(nfds, &rfds, NULL, NULL, &tv);
 
         if (FD_ISSET(STDIN_FILENO, &rfds)) {
+            m_prompt_write = true;
             len = ::read(STDIN_FILENO, buff, BUFF_SIZE);
             len--; // remove LF; \n(10, LF), \r(13, CR)
             if (len == 0) {
@@ -117,6 +124,7 @@ void client_application::run() {
         }
 
         if (FD_ISSET(client->get_fd(), &rfds)) {
+            m_prompt_write = true;
             len = ::read(client->get_fd(), buff, BUFF_SIZE);
             logger->info("data coming, len {}", len);
             if (len > 0) {
@@ -126,9 +134,12 @@ void client_application::run() {
                     if (msg.type == messge_type_t::MSG) {
                         output_msg_recv("\n" + msg.to_string());
                     }
-                    else if (msg.type == messge_type_t::LOGIN) {
+                    else if (msg.type == messge_type_t::HEARTBEAT) {
+                        m_prompt_write = false;
+                        logger->info("heartbeat mesage type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
                     }
                     else if (msg.type == messge_type_t::UNKNOWN) {
+                        m_prompt_write = false;
                         logger->error("unknown message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
                     }
                 }
@@ -138,6 +149,19 @@ void client_application::run() {
                 logger->error("server shutdown");
                 output_error("\nserver shutdown");
                 m_prompt = m_user_name + "> ";
+            }
+        }
+
+        ////// heartbeat
+        {
+            static time_t t = time(NULL);
+            message msg_heartbeat;
+            msg_heartbeat.type = messge_type_t::HEARTBEAT;
+            msg_heartbeat.from = m_user_name;
+            message_handler::make_network_message(msg_heartbeat, buff, len);
+            if (difftime(time(NULL), t) > 10.0f) {
+                t = time(NULL);
+                ::write(client->get_fd(), buff, len);
             }
         }
     }

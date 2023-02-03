@@ -30,6 +30,7 @@ private:
     std::string m_user_name;
     std::string m_user_password;
     std::string m_prompt;
+    bool m_prompt_write{true};
 };
 
 #endif // CLIENT_APPLICATION_H_

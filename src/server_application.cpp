@@ -155,7 +155,7 @@ void server_application::running() {
                         if (auto ptr_handler = m_server->get_handler_by_fd(msg_fd); ptr_handler) {
                             auto msgs = ptr_handler->receive_message(buff, len);
                             for (const auto &msg : msgs) {
-                                logger->info("type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
+                                logger->info("fd{}, type: {}, from: {}, to: {}, payload: {}, timestamp: {}", msg_fd, (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
                                 if (msg.type == messge_type_t::MSG) {
                                     message_handler::make_network_message(msg, buff, len);
                                     if (msg.to == "all") {
@@ -175,7 +175,7 @@ void server_application::running() {
                                     }
                                 }
                                 else if (msg.type == messge_type_t::LOGIN) {
-                                    logger->info("login message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
+                                    logger->info("fd {}, login message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", msg_fd, (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
                                     if (m_server->logined(msg.from)) {
                                         message msg_response;
                                         msg_response.type = messge_type_t::LOGIN;
@@ -183,7 +183,7 @@ void server_application::running() {
                                         msg_response.payload = "user have been logined";
                                         message_handler::make_network_message(msg_response, buff, len);
                                         ::write(msg_fd, buff, len);
-                                        logger->info("user have been logined");
+                                        logger->info("fd {}, user have been logined", msg_fd);
                                     }
                                     else {
                                         auto result = m_server->check_password(msg.from, msg.payload);
@@ -198,7 +198,7 @@ void server_application::running() {
                                                 ::write(msg_fd, buff, len);
 
                                                 auto msgs = m_server->get_off_line_msg(msg.from);
-                                                logger->info("resend off line messages, size {}", msgs.size());
+                                                logger->info("fd {}, resend off line messages, size {}", msg_fd, msgs.size());
                                                 for (const auto &msg : msgs) {
                                                     message_handler::make_network_message(msg, buff, len);
                                                     ::write(msg_fd, buff, len);
@@ -211,7 +211,7 @@ void server_application::running() {
                                                 msg_response.payload = "password is not proper.";
                                                 message_handler::make_network_message(msg_response, buff, len);
                                                 ::write(msg_fd, buff, len);
-                                                logger->info("password is wrong");
+                                                logger->info("fd {}, password is wrong", msg_fd);
                                             }
                                         }
                                         else {
@@ -231,10 +231,10 @@ void server_application::running() {
                                     }
                                 }
                                 else if (msg.type == messge_type_t::HEARTBEAT) {
-                                    logger->info("heartbeat message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
+                                    logger->info("fd {}, heartbeat message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", msg_fd, (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
                                 }
                                 else if (msg.type == messge_type_t::UNKNOWN) {
-                                    logger->error("unknown message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
+                                    logger->error("fd {}, unknown message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", msg_fd, (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
                                 }
                             }
                         }
