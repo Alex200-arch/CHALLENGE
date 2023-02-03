@@ -15,10 +15,24 @@ it is already in include/cxxopts.hpp
 #### Csv file operator
 it is already in include/csv.hpp
 
-## Build Message Lite
+#### Install Googletest
+```console
+$ git clone https://github.com/google/googletest.git
+$ cd googletest/
+$ git checkout release-1.7.0
+$ mkdir build && cd build
+$ cmake3 .. && make
+```
+
+## Build
 ```console
 $ mkdir build && cd build
 $ cmake3 .. && make
+```
+
+## Run Unit Test
+```console
+$ ./unittest
 ```
 
 ## Run Message Lite
