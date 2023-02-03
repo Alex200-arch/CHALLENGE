@@ -22,6 +22,7 @@ private:
     void running();
 
     std::atomic_bool m_keep_app_going{true};
+    std::string m_application_name;
     std::string m_pid_file_name;
     std::string m_log_file_name;
     std::string m_logger_name;

@@ -89,6 +89,14 @@ std::vector<int> message_server::get_others_fds_by_name(const std::string &user_
     return ret;
 }
 
+std::vector<int> message_server::get_all_fds() const {
+    std::vector<int> ret;
+    for (const auto &[name, fd] : m_name_to_fd) {
+        ret.push_back(fd);
+    }
+    return ret;
+}
+
 bool message_server::logined(const std::string &user_name) const {
     if (auto it = m_name_to_fd.find(user_name); it != m_name_to_fd.end()) {
         return true;

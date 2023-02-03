@@ -5,7 +5,8 @@
 #include "server_application.h"
 
 server_application::server_application(const std::string &application_name, const int &port)
-    : m_pid_file_name(application_name + ".pid")
+    : m_application_name(application_name)
+    , m_pid_file_name(application_name + ".pid")
     , m_log_file_name(application_name + ".log")
     , m_logger_name(application_name)
     , m_server(std::unique_ptr<message_server>(message_server_creator<message_server_socket>().create_message_server(port))) {
@@ -115,6 +116,7 @@ void server_application::running() {
     epoll_event events[EVENTS_SIZE];
 
     char buff[BUFF_SIZE];
+    int len;
 
     while (m_keep_runner_going) {
         int num = epoll_wait(m_epoll_fd, events, EVENTS_SIZE, 500);
@@ -148,7 +150,7 @@ void server_application::running() {
             else {
                 if (events[i].events & EPOLLIN) {
                     int msg_fd = events[i].data.fd;
-                    int len = ::read(msg_fd, buff, BUFF_SIZE);
+                    len = ::read(msg_fd, buff, BUFF_SIZE);
                     if (len > 0) {
                         if (auto ptr_handler = m_server->get_handler_by_fd(msg_fd); ptr_handler) {
                             auto msgs = ptr_handler->receive_message(buff, len);
@@ -228,6 +230,9 @@ void server_application::running() {
                                         }
                                     }
                                 }
+                                else if (msg.type == messge_type_t::HEARTBEAT) {
+                                    logger->info("heartbeat message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
+                                }
                                 else if (msg.type == messge_type_t::UNKNOWN) {
                                     logger->error("unknown message type: {}, from: {}, to: {}, payload: {}, timestamp: {}", (int16_t) msg.type, msg.from, msg.to, msg.payload, msg.timestamp);
                                 }
@@ -247,8 +252,16 @@ void server_application::running() {
         ////// heartbeat
         {
             static time_t t = time(NULL);
+            message msg_heartbeat;
+            msg_heartbeat.type = messge_type_t::HEARTBEAT;
+            msg_heartbeat.from = m_application_name;
+            message_handler::make_network_message(msg_heartbeat, buff, len);
             if (difftime(time(NULL), t) > 10.0f) {
                 t = time(NULL);
+                auto fds = m_server->get_all_fds();
+                for (const auto &fd : fds) {
+                    ::write(fd, buff, len);
+                }
             }
         }
     }

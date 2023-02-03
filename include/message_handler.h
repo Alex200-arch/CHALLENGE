@@ -9,6 +9,7 @@
 enum class messge_type_t : int16_t {
     LOGIN = 1,
     MSG = 2,
+    HEARTBEAT = 3,
     UNKNOWN
 };
 
